@@ -13,10 +13,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use super::{meter_batch, meter_filter};
 use anyhow::anyhow;
+use meter_filter::MeterFilteringConsumer;
 use skywalking::reporter::{CollectItemConsume, CollectItemProduce, grpc::GrpcReporter};
 use std::time::Duration;
-use tokio::time::sleep;
+use tokio::{sync::mpsc, time::sleep};
 use tonic::transport::{Certificate, Channel, ClientTlsConfig, Endpoint, Identity};
 use tracing::{debug, info, warn};
 
@@ -35,6 +37,20 @@ pub async fn run_reporter(
 ) -> anyhow::Result<()> {
     let endpoint = create_endpoint(&config).await?;
     let channel = connect(endpoint).await;
+
+    let (meter_tx, meter_rx) = mpsc::channel(128);
+    let meter_channel = channel.clone();
+    let meter_authentication = config.authentication.clone();
+    tokio::spawn(async move {
+        if let Err(err) =
+            meter_batch::run_meter_batch_reporter(meter_channel, meter_authentication, meter_rx)
+                .await
+        {
+            warn!(?err, "Meter batch reporter failed");
+        }
+    });
+
+    let consumer = MeterFilteringConsumer::new(consumer, meter_tx);
 
     let mut reporter = GrpcReporter::new_with_pc(channel, producer, consumer);
 

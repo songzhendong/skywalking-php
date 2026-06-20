@@ -14,6 +14,7 @@
 // limitations under the License.
 
 pub mod channel;
+pub mod phm;
 pub mod reporter;
 
 use crate::{
@@ -45,6 +46,7 @@ pub struct WorkerConfiguration {
     pub socket_file_path: PathBuf,
     pub heart_beat: Option<HeartBeatConfiguration>,
     pub reporter_config: ReporterConfiguration,
+    pub phm: Option<phm::PhmConfiguration>,
 }
 
 pub struct HeartBeatConfiguration {
@@ -126,7 +128,11 @@ pub async fn start_worker(config: WorkerConfiguration) -> anyhow::Result<()> {
         });
 
         if let Some(heart_beat_config) = config.heart_beat {
-            report_properties_and_keep_alive(heart_beat_config, TxReporter(tx_));
+            report_properties_and_keep_alive(heart_beat_config, TxReporter(tx_.clone()));
+        }
+
+        if let Some(phm_config) = config.phm {
+            phm::run_phm_collector(phm_config, TxReporter(tx_));
         }
 
         // Run reporter with blocking.

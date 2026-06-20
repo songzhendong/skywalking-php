@@ -14,9 +14,10 @@
 // limitations under the License.
 
 use crate::module::{
-    AUTHENTICATION, ENABLE_TLS, HEARTBEAT_PERIOD, PROPERTIES_REPORT_PERIOD_FACTOR, REPORTER_TYPE,
-    SERVER_ADDR, SERVICE_INSTANCE, SERVICE_NAME, SOCKET_FILE_PATH, SSL_CERT_CHAIN_PATH,
-    SSL_KEY_PATH, SSL_TRUSTED_CA_PATH, WORKER_THREADS, is_standalone_reporter_type,
+    AUTHENTICATION, ENABLE_TLS, HEARTBEAT_PERIOD, METRICS_ENABLE, METRICS_REPORT_PERIOD,
+    PROPERTIES_REPORT_PERIOD_FACTOR, REPORTER_TYPE, SERVER_ADDR, SERVICE_INSTANCE, SERVICE_NAME,
+    SOCKET_FILE_PATH, SSL_CERT_CHAIN_PATH, SSL_KEY_PATH, SSL_TRUSTED_CA_PATH, WORKER_THREADS,
+    is_standalone_reporter_type,
 };
 #[cfg(feature = "kafka-reporter")]
 use crate::module::{KAFKA_BOOTSTRAP_SERVERS, KAFKA_PRODUCER_CONFIG};
@@ -24,6 +25,7 @@ use crate::module::{KAFKA_BOOTSTRAP_SERVERS, KAFKA_PRODUCER_CONFIG};
 use skywalking_php_worker::reporter::KafkaReporterConfiguration;
 use skywalking_php_worker::{
     HeartBeatConfiguration, WorkerConfiguration, new_tokio_runtime,
+    phm::PhmConfiguration,
     reporter::{GrpcReporterConfiguration, ReporterConfiguration},
     start_worker,
 };
@@ -79,6 +81,16 @@ pub fn init_worker() {
                         properties_report_period_factor: *PROPERTIES_REPORT_PERIOD_FACTOR,
                     }),
                     reporter_config,
+                    phm: if *METRICS_ENABLE {
+                        Some(PhmConfiguration {
+                            service_name: SERVICE_NAME.clone(),
+                            service_instance: SERVICE_INSTANCE.clone(),
+                            report_period_secs: *METRICS_REPORT_PERIOD,
+                            php_process_pid: libc::getpid() as i32,
+                        })
+                    } else {
+                        None
+                    },
                 };
 
                 // Run the worker in subprocess.

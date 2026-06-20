@@ -115,8 +115,16 @@ const SKYWALKING_AGENT_INJECT_CONTEXT: &str = "skywalking_agent.inject_context";
 const SKYWALKING_AGENT_STANDALONE_SOCKET_PATH: &str = "skywalking_agent.standalone_socket_path";
 
 /// The log level reported to SkyWalking, based on PSR-3, one of `Off`, `Debug`,
-/// `Info`, Notice`, Warning`, Error`, Critical`, Alert`, Emergency`.
+/// `Info`, Notice`, Waning`, Error`, Critical`, Alert`, Emergency`.
 const SKYWALKING_AGENT_PSR_LOGGING_LEVEL: &str = "skywalking_agent.psr_logging_level";
+
+/// Whether to report PHP Health Metrics (PHM) via native meter protocol.
+/// Default is on when the agent extension is active (Linux `/proc` sampling
+/// only).
+const SKYWALKING_AGENT_METRICS_ENABLE: &str = "skywalking_agent.metrics_enable";
+
+/// PHM report period in seconds. Meters are sampled at most once per period.
+const SKYWALKING_AGENT_METRICS_REPORT_PERIOD: &str = "skywalking_agent.metrics_report_period";
 
 #[php_get_module]
 pub fn get_module() -> Module {
@@ -212,6 +220,12 @@ pub fn get_module() -> Module {
     module.add_ini(
         SKYWALKING_AGENT_PSR_LOGGING_LEVEL,
         "".to_string(),
+        Policy::System,
+    );
+    module.add_ini(SKYWALKING_AGENT_METRICS_ENABLE, true, Policy::System);
+    module.add_ini(
+        SKYWALKING_AGENT_METRICS_REPORT_PERIOD,
+        30i64,
         Policy::System,
     );
 

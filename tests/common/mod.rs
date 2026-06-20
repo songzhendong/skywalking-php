@@ -319,8 +319,17 @@ fn setup_php_fpm(index: usize, fpm_addr: &str) -> Child {
         "-d",
         "skywalking_agent.psr_logging_level=Warning",
     ];
+    let mut args: Vec<String> = args.iter().map(|s| (*s).to_string()).collect();
+    if index == 1 {
+        args.extend([
+            "-d".to_owned(),
+            "skywalking_agent.metrics_enable=On".to_owned(),
+            "-d".to_owned(),
+            "skywalking_agent.metrics_report_period=5".to_owned(),
+        ]);
+    }
     info!(cmd = args.join(" "), "start command");
-    let child = Command::new(args[0])
+    let child = Command::new(&args[0])
         .args(&args[1..])
         .stdin(Stdio::null())
         .stdout(File::create("/tmp/fpm-skywalking-stdout.log").unwrap())
