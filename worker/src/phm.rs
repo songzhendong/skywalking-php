@@ -253,7 +253,8 @@ mod extended {
     const DEFAULT_CLK_TCK: f64 = 100.0;
     const FD_SOFT_LIMIT_UNLIMITED: u64 = 1_000_000_000;
 
-    /// One `/proc` read per source file per sample tick (shared by base + extended PHM).
+    /// One `/proc` read per source file per sample tick (shared by base +
+    /// extended PHM).
     pub struct ProcSnapshot {
         pub vm_rss_mb: Option<f64>,
         pub vm_hwm_mb: Option<f64>,
