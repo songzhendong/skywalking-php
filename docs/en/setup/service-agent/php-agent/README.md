@@ -116,8 +116,8 @@ Refer to the Configuration section for more configuration items.
 ### PHP Health Metrics (PHM)
 
 > **Platform:** PHM process meters are **Linux only**. The forked reporter worker reads the
-> parent PHP process via `/proc` (`/proc/{pid}/status`, `stat`, and `fd`). They are not available
-> on macOS or Windows. Trace and other agent features are unchanged.
+> parent PHP process via `/proc` (`status`, `stat`, `fd`, `limits`, `io`, plus host `meminfo` and
+> `uptime`). They are not available on macOS or Windows. Trace and other agent features are unchanged.
 
 When `reporter_type` is `grpc` or `kafka`, the forked reporter worker boots
 `skywalking::metrics::Metricer` in `start_worker`, alongside heartbeat reporting. A background
@@ -138,7 +138,7 @@ To disable it or tune the interval, use `php.ini`:
 skywalking_agent.metrics_report_period = 30
 ```
 
-PHM reports six process meters (aligned with OAP `php-runtime.yaml` and Horizon UI widgets):
+PHM reports twelve process meters (aligned with OAP `php-runtime.yaml` and Horizon UI widgets):
 
 | Agent meter name | OAP / UI expression | Source |
 | --- | --- | --- |
@@ -148,6 +148,12 @@ PHM reports six process meters (aligned with OAP `php-runtime.yaml` and Horizon 
 | `instance_php_virtual_memory_mb` | `meter_instance_php_virtual_memory_mb` | `/proc/{pid}/status` VmSize |
 | `instance_php_thread_count` | `meter_instance_php_thread_count` | `/proc/{pid}/status` Threads |
 | `instance_php_open_fd_count` | `meter_instance_php_open_fd_count` | `/proc/{pid}/fd` count |
+| `instance_php_swap_used_mb` | `meter_instance_php_swap_used_mb` | `/proc/{pid}/status` VmSwap |
+| `instance_php_fd_utilization` | `meter_instance_php_fd_utilization` | `/proc/{pid}/fd` count ÷ `/proc/{pid}/limits` soft limit |
+| `instance_php_process_mem_utilization` | `meter_instance_php_process_mem_utilization` | VmRSS ÷ `/proc/meminfo` MemTotal |
+| `instance_php_io_read_kb_per_sec` | `meter_instance_php_io_read_kb_per_sec` | `/proc/{pid}/io` read_bytes delta |
+| `instance_php_major_page_faults_per_sec` | `meter_instance_php_major_page_faults_per_sec` | `/proc/{pid}/stat` majflt delta |
+| `instance_php_process_uptime_sec` | `meter_instance_php_process_uptime_sec` | `/proc/{pid}/stat` starttime vs `/proc/uptime` |
 
 On the OAP side, activate the `php-runtime` entry in
 `agent-analyzer.default.meterAnalyzerActiveFiles`. Horizon UI shows the widgets on the **General
